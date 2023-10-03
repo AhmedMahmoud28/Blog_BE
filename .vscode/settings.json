@@ -1,0 +1,27 @@
+{
+  "python.linting.pylintEnabled": true,
+  "python.linting.pylintArgs": [
+    "--enable=W0614"
+  ],
+  "python.linting.pycodestyleEnabled": true,
+  "python.linting.enabled": false,
+  "python.linting.flake8Enabled": true,
+  "files.exclude": {
+    "**/*.pyc": true,
+    "**/mysql_db": true
+  },
+  "editor.formatOnSave": true,
+  "[python]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    }
+  },
+  "liveServer.settings.port": 5501,
+  "search.exclude": {
+    "**/env": true,
+    "**/.git": true,
+    "**/mysql_db": true
+  },
+  "python.formatting.provider": "black",
+  // "python.sortImports.path": "isort",
+}

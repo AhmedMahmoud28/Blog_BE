@@ -1,0 +1,46 @@
+version: "3.3"
+
+services:
+  postgres_db:
+    image: postgres:12.3
+    container_name: My_blog_production_postgres
+    restart: always
+    volumes:
+      - My_blog_staging_postgres_data:/var/lib/postgresql/data:Z
+    env_file: .env
+    ports:
+      - "5433:5432"
+    # add this for logging all queries to console
+    # command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
+
+  web:
+    build:
+      context: .
+      dockerfile: ./compose/production/Dockerfile
+    image: My_blog_web
+    container_name: My_blog_web
+    restart: always
+    command: /start.sh
+    expose:
+      - "8020"
+    depends_on:
+      - postgres_db
+    env_file: .env
+
+  nginx:
+    # https://github.com/staticfloat/docker-nginx-certbot
+    restart: unless-stopped
+    image: staticfloat/nginx-certbot
+    ports:
+      - 80:80/tcp
+      - 443:443/tcp
+    environment:
+      CERTBOT_EMAIL: owner@company.com
+    volumes:
+      - ./compose/production/nginx:/etc/nginx/user.conf.d:ro
+      - letsencrypt:/etc/letsencrypt
+
+volumes:
+  letsencrypt:
+  My_blog_staging_postgres_data:
+

@@ -1,0 +1,43 @@
+version: "3.3"
+
+services:
+  postgres_db:
+    image: postgres:12.3
+    container_name: My_blog_postgres_production
+    volumes:
+      - My_blog_local_postgres_data:/var/lib/postgresql/data:Z
+    env_file: .docker.env
+    ports:
+      - "5433:5432"
+    # add this for logging all queries to console
+    # command: ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
+
+  web:
+    build:
+      context: .
+      dockerfile: ./compose/local/Dockerfile
+    image: My_blog_web
+    container_name: My_blog_web
+    restart: on-failure
+    command: /start.sh
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    links:
+      - postgres_db
+    depends_on:
+      - postgres_db
+    env_file: .docker.env
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    logging:
+      driver: none
+
+volumes:
+  My_blog_local_postgres_data: {}
+  letsencrypt:

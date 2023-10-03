@@ -1,0 +1,21 @@
+boto3==1.24.78
+dj-rest-auth==2.2.5
+django-allauth==0.51.0
+Django==4.1.1
+django-cors-headers==3.13.0
+django-filter==22.1
+django-import-export==2.9.0
+django-modeltranslation==0.18.4
+django-storages==1.13.1
+django-unique-upload==0.2.1
+djangorestframework==3.13.1
+djangorestframework-simplejwt==5.2.0
+drf-yasg==1.21.3
+Pillow==9.2.0
+python-decouple==3.6
+django-cities-light==3.9.2 # https://github.com/yourlabs/django-cities-light
+django-smart-selects==1.6.0
+django-solo==2.0.0
+django-tinymce==3.5.0
+psycopg2-binary==2.9.7 # https://github.com/psycopg/psycopg2
+django-unfold == 0.6.8
