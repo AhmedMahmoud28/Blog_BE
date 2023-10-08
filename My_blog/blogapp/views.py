@@ -1,9 +1,22 @@
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from My_blog.blogapp import models, serializers
+
+
+def send_notification(user_id, message):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"user_{user_id}",
+        {
+            "type": "send_notification",
+            "message": message,
+        },
+    )
 
 
 class FollowerView(viewsets.ReadOnlyModelViewSet):

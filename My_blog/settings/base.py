@@ -60,6 +60,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "import_export",
     "django_filters",
+    "channels",
     # all auth
     "allauth.socialaccount",
     "allauth.socialaccount.providers.facebook",
@@ -107,7 +108,9 @@ TEMPLATES = [
 
 
 WSGI_APPLICATION = "My_blog.wsgi.application"
+ASGI_APPLICATION = "My_blog.asgi.application"
 
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases

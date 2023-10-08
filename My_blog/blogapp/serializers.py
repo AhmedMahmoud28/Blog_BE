@@ -6,6 +6,59 @@ from My_blog.blogapp import models
 from My_blog.userapp.serializers import UserDataSerializer
 
 
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.TestNotification
+        fields = "__all__"
+
+
+class Base(serializers.Serializer):
+    class Meta:
+        abstract = True
+
+    def booked(self, obj):
+        return obj.id in models.Bookmark.objects.filter(
+            user=self.context.get("user")
+        ).values_list("post", flat=True)
+
+    def like(self, obj):
+        return obj.id in models.PostLike.objects.filter(
+            user=self.context.get("user")
+        ).values_list("post", flat=True)
+
+    def likecount(self, obj):
+        Q = (
+            models.PostLike.objects.select_related("post")
+            .values("post")
+            .annotate(Count("post"))
+        )
+        for i in Q:
+            if obj.id == i["post"]:
+                return i["post__count"]
+        else:
+            return 0
+
+    def commentlike(self, obj):
+        return obj.id in models.CommentLike.objects.filter(
+            user=self.context.get("user")
+        ).values_list("comment", flat=True)
+
+    def commentlikecount(self, obj):
+        Q = (
+            models.CommentLike.objects.select_related("comment")
+            .values("comment")
+            .annotate(Count("comment"))
+        )
+        for i in Q:
+            if obj.id == i["comment"]:
+                return i["comment__count"]
+        else:
+            return 0
+
+    def get_date(self, obj):
+        return obj.date.strftime("%d %b %Y")
+
+
 class FollowerSerializer(serializers.ModelSerializer):
     user = UserDataSerializer()
 
@@ -87,7 +140,7 @@ class BlogSerializer(serializers.ModelSerializer):
         )
 
 
-class BlogDetailedSerializer(serializers.ModelSerializer):
+class BlogDetailedSerializer(serializers.ModelSerializer, Base):
     related_blogs = BlogDataSerializer(many=True)
     category = BlogCategoryDataSerializer()
     date = serializers.SerializerMethodField()
@@ -97,9 +150,6 @@ class BlogDetailedSerializer(serializers.ModelSerializer):
         model = models.Blog
         exclude = ("slug",)
 
-    def get_date(self, obj):
-        return obj.date.strftime("%d %b %Y")
-
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -107,7 +157,7 @@ class TagSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class FeedSerializer(serializers.ModelSerializer):
+class FeedSerializer(serializers.ModelSerializer, Base):
     date = serializers.SerializerMethodField()
     is_bookmarked = serializers.SerializerMethodField(method_name="booked")
     is_liked = serializers.SerializerMethodField(method_name="like")
@@ -117,33 +167,8 @@ class FeedSerializer(serializers.ModelSerializer):
         model = models.Post
         fields = "__all__"
 
-    def booked(self, obj):
-        return obj.id in models.Bookmark.objects.filter(
-            user=self.context["user"]
-        ).values_list("post", flat=True)
 
-    def like(self, obj):
-        return obj.id in models.PostLike.objects.filter(
-            user=self.context["user"]
-        ).values_list("post", flat=True)
-
-    def likecount(self, obj):
-        Q = (
-            models.PostLike.objects.select_related("post")
-            .values("post")
-            .annotate(Count("post"))
-        )
-        for i in Q:
-            if obj.id == i["post"]:
-                return i["post__count"]
-        else:
-            return 0
-
-    def get_date(self, obj):
-        return obj.date.strftime("%d %b %Y")
-
-
-class PostSerializer(serializers.ModelSerializer):
+class PostSerializer(serializers.ModelSerializer, Base):
     date = serializers.SerializerMethodField()
     is_bookmarked = serializers.SerializerMethodField(method_name="booked")
     is_liked = serializers.SerializerMethodField(method_name="like")
@@ -164,41 +189,16 @@ class PostSerializer(serializers.ModelSerializer):
             "likes",
         ]
 
-    def booked(self, obj):
-        return obj.id in models.Bookmark.objects.filter(
-            user=self.context["user"]
-        ).values_list("post", flat=True)
 
-    def like(self, obj):
-        return obj.id in models.PostLike.objects.filter(
-            user=self.context["user"]
-        ).values_list("post", flat=True)
-
-    def likecount(self, obj):
-        Q = (
-            models.PostLike.objects.select_related("post")
-            .values("post")
-            .annotate(Count("post"))
-        )
-        for i in Q:
-            if obj.id == i["post"]:
-                return i["post__count"]
-        else:
-            return 0
-
-    def get_date(self, obj):
-        return obj.date.strftime("%d %b %Y")
-
-
-class PostDetailedSerializer(serializers.ModelSerializer):
+class PostDetailedSerializer(serializers.ModelSerializer, Base):
     blog = BlogDataSerializer()
     user = UserDataSerializer(read_only=True)
-    date = serializers.SerializerMethodField()
     tags = TagSerializer(many=True)
-    comments = serializers.SerializerMethodField(method_name="postcomments")
+    date = serializers.SerializerMethodField()
     is_bookmarked = serializers.SerializerMethodField(method_name="booked")
     is_liked = serializers.SerializerMethodField(method_name="like")
     likes = serializers.SerializerMethodField(method_name="likecount")
+    comments = serializers.SerializerMethodField(method_name="postcomments")
 
     class Meta:
         model = models.Post
@@ -215,31 +215,6 @@ class PostDetailedSerializer(serializers.ModelSerializer):
             "is_liked",
             "likes",
         )
-
-    def get_date(self, obj):
-        return obj.date.strftime("%d %b %Y")
-
-    def booked(self, obj):
-        return obj.id in models.Bookmark.objects.filter(
-            user=self.context["user"]
-        ).values_list("post", flat=True)
-
-    def like(self, obj):
-        return obj.id in models.PostLike.objects.filter(
-            user=self.context["user"]
-        ).values_list("post", flat=True)
-
-    def likecount(self, obj):
-        Q = (
-            models.PostLike.objects.select_related("post")
-            .values("post")
-            .annotate(Count("post"))
-        )
-        for i in Q:
-            if obj.id == i["post"]:
-                return i["post__count"]
-        else:
-            return 0
 
     def postcomments(self, obj):
         Query = models.Comment.objects.select_related("user").filter(post=obj)
@@ -306,7 +281,7 @@ class AddPostLikeSerializer(serializers.ModelSerializer):
             ).first()
             if self.instance is None:
                 return models.PostLike.objects.create(
-                    user_id=self.context["user"], post=self.validated_data["post"]
+                    user=self.context["user"], post=self.validated_data["post"]
                 )
 
 
@@ -316,9 +291,10 @@ class UpdatePostLikeSerializer(serializers.ModelSerializer):
         fields = ("id", "post")
 
 
-class CommentSerializer(serializers.ModelSerializer):
-    is_liked = serializers.SerializerMethodField(method_name="like")
-    likes = serializers.SerializerMethodField(method_name="likecount")
+class CommentSerializer(serializers.ModelSerializer, Base):
+    date = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField(method_name="commentlike")
+    likes = serializers.SerializerMethodField(method_name="commentlikecount")
 
     class Meta:
         model = models.Comment
@@ -328,54 +304,21 @@ class CommentSerializer(serializers.ModelSerializer):
             "post",
             "text",
             "picture",
-            "date_created",
+            "date",
             "is_liked",
             "likes",
         )
 
-    def like(self, obj):
-        return obj.id in models.CommentLike.objects.filter(
-            user=self.context["user"]
-        ).values_list("comment", flat=True)
 
-    def likecount(self, obj):
-        Q = (
-            models.CommentLike.objects.select_related("comment")
-            .values("comment")
-            .annotate(Count("comment"))
-        )
-        for i in Q:
-            if obj.id == i["comment"]:
-                return i["comment__count"]
-        else:
-            return 0
-
-
-class CommentDetailedSerializer(serializers.ModelSerializer):
+class CommentDetailedSerializer(serializers.ModelSerializer, Base):
+    date = serializers.SerializerMethodField()
     post = PostSerializer()
-    is_liked = serializers.SerializerMethodField(method_name="like")
-    likes = serializers.SerializerMethodField(method_name="likecount")
+    is_liked = serializers.SerializerMethodField(method_name="commentlike")
+    likes = serializers.SerializerMethodField(method_name="commentlikecount")
 
     class Meta:
         model = models.Comment
         exclude = ("user",)
-
-    def like(self, obj):
-        return obj.id in models.CommentLike.objects.filter(
-            user=self.context["user"]
-        ).values_list("comment", flat=True)
-
-    def likecount(self, obj):
-        Q = (
-            models.CommentLike.objects.select_related("comment")
-            .values("comment")
-            .annotate(Count("comment"))
-        )
-        for i in Q:
-            if obj.id == i["comment"]:
-                return i["comment__count"]
-        else:
-            return 0
 
 
 class AddCommentSerializer(serializers.ModelSerializer):
